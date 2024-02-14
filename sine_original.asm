@@ -1,29 +1,28 @@
+	org 0x8000
+
 ;;;
 ;;; Parabolic sine table generator for Z80
 ;;;
 ;;; - 19 bytes (can vary depending on initial register values)
 ;;; - Generates a 256 byte sine table with values from -64 to 63
-;;; - 1 byte extra to get values from -128 to 127
+;;; - 1 byte extra if the sine table is placed somewhere else.
 ;;;
-;;; The generator works by calculating a parabolic curve using 8.8 fixed point
-;;; and inverting every second value.
+;;; The generator works by calculating a parabolic curve using 8.8
+;;; fixed point and inverting every second value.
 ;;;
 ;;; Feel free to use this as you like!
 ;;; - neon/darklite
 ;;;
 
-	org 0x8000
-
-
 	;; Set up registers
-	;; - bc is the pointer to the page aligned table and must point to the
-	;;   first element.
+	;; - bc is the pointer to the page aligned table and must
+	;;   point to the first element.
 	;; - hl is the initial value. Reasonable values are 0 to 127.
 	;;   64 gives a nice curve.
-	;; - de must be 0x00fe for the output to be in the range -64 to 63.
+	;; - de must be 0x00fe
 
-	;; bc is the start of the program (0x8000 here) on the ZX Spectrum.
-	;; The sine table is written to 0x8100-0x81ff.
+	;; bc is initially the start of the program (0x8000) on the ZX
+	;; Spectrum
 	inc	b
 	ld	h, c
 	ld	l, c
@@ -61,11 +60,17 @@ sine_loop:
 	;; Stop after 256 iterations
 	jr	nz, sine_loop
 
+	;; Register values after generating the table:
+	;; - a = 0xff
+	;; - bc = sine_table
+	;; - de = 0xfefe
+	;; - hl = 0xff00
+
 	;; Plot the curve using the plot function in the ZX Spectrum ROM
 draw_loop:
 	halt
 	ld	a, (bc)
-	add	64
+	add	96
 	push	bc
 	ld	b, a
 	call	0x22e5
